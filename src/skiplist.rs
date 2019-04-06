@@ -4,7 +4,6 @@ use std::sync::RwLock;
 const MAX_LEVEL: usize = 4;
 
 pub struct Node<T> {
-    level: usize,
     pub value: T,
     nexts: Vec<Option<Arc<RwLock<Node<T>>>>>,
 }
@@ -29,7 +28,6 @@ impl<T: PartialOrd> Iterator for SkipListIter<T> {
         match &now_guard.nexts[0] {
             Some(next) => {
                 let new_now = next.clone();
-                drop(next);
                 drop(now_guard);
                 self.now = new_now.clone();
                 return Some(new_now.clone());
@@ -62,7 +60,6 @@ impl<T: PartialOrd> SkipList<T> {
             nexts.push(None);
         }
         let new_node = Arc::new(RwLock::new(Node {
-            level: height,
             value: val,
             nexts,
         }));
