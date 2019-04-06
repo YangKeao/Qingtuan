@@ -113,7 +113,6 @@ impl<T: PartialOrd> SkipList<T> {
                         Some(next) => {
                             if &next.read().unwrap().value < val {
                                 let new_x = next.clone();
-                                drop(next);
                                 drop(x_guard);
                                 x = new_x;
                                 continue;
