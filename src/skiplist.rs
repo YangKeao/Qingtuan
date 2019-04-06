@@ -57,7 +57,10 @@ impl<T: PartialOrd> SkipList<T> {
         let (_now, prev) = self.find_greater_or_equal(&val);
 
         let height = random_height();
-        let nexts = Vec::new();
+        let mut nexts = Vec::new();
+        for i in 0..MAX_LEVEL {
+            nexts.push(None);
+        }
         let new_node = Arc::new(RwLock::new(Node {
             level: height,
             value: val,
@@ -84,9 +87,11 @@ impl<T: PartialOrd> SkipList<T> {
             }
         }
 
-        match &*self.head.read().unwrap() {
+        let head_guard = self.head.read().unwrap();
+        match &*head_guard {
             None => {
-                self.head.write().unwrap().replace(new_node).unwrap();
+                drop(head_guard);
+                self.head.write().unwrap().replace(new_node);
             }
             Some(_) => {}
         }
