@@ -57,12 +57,6 @@ impl<T: PartialOrd + Default> SkipList<T> {
     }
 
     pub fn insert(&self, val: T) {
-        //        println!();
-        //        unsafe {
-        //            let val = &val as *const T as *const u32;
-        //            println!("INSERTING {}", *val);
-        //        }
-
         let (_now, prev) = self.find_greater_or_equal(&val);
 
         let height = random_height();
@@ -81,12 +75,6 @@ impl<T: PartialOrd + Default> SkipList<T> {
                         }
                         None => {}
                     }
-                    //                    unsafe {
-                    //                        let val = &prev.read().unwrap().value as *const T as *const u32;
-                    //                        if i == 0 {
-                    //                            println!("{} {}", *val, i);
-                    //                        }
-                    //                    }
                     prev.write().unwrap().nexts[i] = Some(new_node.clone());
                 }
                 None => {
@@ -141,7 +129,6 @@ impl<T: PartialOrd + Default> SkipList<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::thread;
 
     #[test]
     fn insert_test() {
@@ -166,45 +153,6 @@ mod test {
         nums.sort();
         for (index, num) in list.iter().enumerate() {
             assert_eq!(num.read().unwrap().value, nums[index]);
-        }
-    }
-
-    #[test]
-    fn multi_thread_random_insert() {
-        let list = Arc::new(SkipList::new());
-        let mut num_list = Vec::new();
-        let mut nums: Vec<Arc<Vec<u32>>> = Vec::new();
-
-        const THREAD_NUM: usize = 8;
-        const NUMS_PER_THREAD: usize = 5;
-        for _ in 0..THREAD_NUM {
-            let mut local_nums = Vec::new();
-            for _ in 0..NUMS_PER_THREAD {
-                let num = rand::random();
-                num_list.push(num);
-                local_nums.push(num);
-            }
-            nums.push(Arc::new(local_nums));
-        }
-        num_list.sort();
-
-        let mut threads = Vec::new();
-        for i in 0..THREAD_NUM {
-            let nums = nums[i].clone();
-            let list = list.clone();
-            threads.push(thread::spawn(move || {
-                for i in 0..NUMS_PER_THREAD {
-                    list.insert(nums[i]);
-                }
-            }));
-        }
-
-        for t in threads {
-            t.join().unwrap();
-        }
-
-        for (index, num) in list.iter().enumerate() {
-            assert_eq!(num.read().unwrap().value, num_list[index]);
         }
     }
 }
