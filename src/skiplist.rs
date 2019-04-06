@@ -73,7 +73,7 @@ impl<T: PartialOrd> SkipList<T> {
                             prev.write().unwrap().nexts[i] = Some(new_node.clone());
                         }
                         None => {
-                            // TODO: is this situation special?
+                            // TODO: is this situation really unreachable?
                             unreachable!();
                         }
                     }
@@ -149,7 +149,7 @@ mod test {
     #[test]
     fn insert_test() {
         let list = SkipList::new();
-        for i in 0..100 {
+        for i in 0..1000 {
             list.insert(i);   
         }
         for (index, num) in list.iter().unwrap().enumerate() {
