@@ -17,9 +17,40 @@ fn random_height() -> usize {
     rand::random::<usize>() % MAX_LEVEL
 }
 
+pub struct SkipListIter<T: PartialOrd> {
+    now: Arc<RwLock<Node<T>>>,
+}
+
+impl<T: PartialOrd> Iterator for SkipListIter<T> {
+    type Item = Arc<RwLock<Node<T>>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let now_guard = self.now.read().unwrap();
+        match &now_guard.nexts[0] {
+            Some(next) => {
+                let new_now = next.clone();
+                drop(next);
+                drop(now_guard);
+                self.now = new_now.clone();
+                return Some(new_now.clone());
+            }
+            None => None,
+        }
+    }
+}
+
 impl<T: PartialOrd> SkipList<T> {
-    fn new() -> Self {
-        return Self { head: RwLock::new(None) };
+    pub fn new() -> Self {
+        return Self {
+            head: RwLock::new(None),
+        };
+    }
+
+    pub fn iter(&self) -> Option<SkipListIter<T>> {
+        match &*self.head.read().unwrap() {
+            Some(head) => Some(SkipListIter::<T> { now: head.clone() }),
+            None => None,
+        }
     }
 
     pub fn insert(&self, val: T) {
