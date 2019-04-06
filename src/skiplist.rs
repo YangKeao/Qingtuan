@@ -80,6 +80,7 @@ impl<T: PartialOrd> SkipList<T> {
                 }
                 None => {
                     // TODO: is this situation special?
+                    unreachable!();
                 }
             }
         }
