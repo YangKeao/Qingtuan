@@ -13,7 +13,7 @@ pub struct SkipList<T: PartialOrd> {
 }
 
 fn random_height() -> usize {
-    rand::random::<usize>() % MAX_LEVEL
+    rand::random::<usize>() % MAX_LEVEL + 1
 }
 
 pub struct SkipListIter<T: PartialOrd> {
@@ -24,13 +24,12 @@ impl<T: PartialOrd> Iterator for SkipListIter<T> {
     type Item = Arc<RwLock<Node<T>>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let now_guard = self.now.read().unwrap();
+        let now = self.now.clone();
+        let now_guard = now.read().unwrap();
         match &now_guard.nexts[0] {
             Some(next) => {
-                let new_now = next.clone();
-                drop(now_guard);
-                self.now = new_now.clone();
-                return Some(new_now.clone());
+                self.now = next.clone();
+                return Some(now.clone());
             }
             None => None,
         }
@@ -52,6 +51,12 @@ impl<T: PartialOrd> SkipList<T> {
     }
 
     pub fn insert(&self, val: T) {
+//        println!();
+//        unsafe {
+//            let val = &val as *const T as *const u32;
+//            println!("INSERTING {}", *val);
+//        }
+
         let (_now, prev) = self.find_greater_or_equal(&val);
 
         let height = random_height();
@@ -70,17 +75,19 @@ impl<T: PartialOrd> SkipList<T> {
                     match &prev.read().unwrap().nexts[i] {
                         Some(next) => {
                             new_node.write().unwrap().nexts[i] = Some(next.clone());
-                            prev.write().unwrap().nexts[i] = Some(new_node.clone());
                         }
-                        None => {
-                            // TODO: is this situation really unreachable?
-                            unreachable!();
-                        }
+                        None => {}
                     }
+//                    unsafe {
+//                        let val = &prev.read().unwrap().value as *const T as *const u32;
+//                        if i == 0 {
+//                            println!("{} {}", *val, i);
+//                        }
+//                    }
+                    prev.write().unwrap().nexts[i] = Some(new_node.clone());
                 }
                 None => {
                     // TODO: is this situation special?
-                    unreachable!();
                 }
             }
         }
