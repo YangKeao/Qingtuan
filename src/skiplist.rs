@@ -75,10 +75,15 @@ impl<T: PartialOrd> SkipList<T> {
 
                 let mut level = MAX_LEVEL - 1;
                 loop {
-                    match &x.read().unwrap().nexts[level] {
+                    let x_guard = x.read().unwrap();
+                    match &x_guard.nexts[level] {
                         Some(next) => {
                             if &next.read().unwrap().value < val {
-                                x = next.clone();
+                                let new_x = next.clone();
+                                drop(next);
+                                drop(x_guard);
+                                x = new_x;
+                                continue;
                             } else {
                                 prev[level] = Some(x.clone());
                                 if level == 0 {
