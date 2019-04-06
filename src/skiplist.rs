@@ -58,7 +58,7 @@ impl<T: PartialOrd> SkipList<T> {
 
         let height = random_height();
         let mut nexts = Vec::new();
-        for i in 0..MAX_LEVEL {
+        for _ in 0..MAX_LEVEL {
             nexts.push(None);
         }
         let new_node = Arc::new(RwLock::new(Node {
@@ -147,6 +147,7 @@ impl<T: PartialOrd> SkipList<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::thread;
 
     #[test]
     fn insert_test() {
@@ -156,6 +157,60 @@ mod test {
         }
         for (index, num) in list.iter().unwrap().enumerate() {
             assert_eq!(num.read().unwrap().value, index);
+        }
+    }
+
+    #[test]
+    fn random_insert() {
+        let list = SkipList::new();
+        let mut nums: Vec<u32> = Vec::new();
+        for _ in 0..1000 {
+            let num = rand::random();
+            nums.push(num);
+            list.insert(num);
+        }
+        nums.sort();
+        for (index, num) in list.iter().unwrap().enumerate() {
+            assert_eq!(num.read().unwrap().value, nums[index]);
+        }
+    }
+
+    #[test]
+    fn multi_thread_random_insert() {
+        let list = Arc::new(SkipList::new());
+        let mut num_list = Vec::new();
+        let mut nums: Vec<Arc<Vec<u32>>> = Vec::new();
+
+        const THREAD_NUM: usize = 8;
+        const NUMS_PER_THREAD: usize = 1000;
+        for _ in 0..THREAD_NUM {
+            let mut local_nums = Vec::new();
+            for _ in 0..NUMS_PER_THREAD {
+                let num = rand::random();
+                num_list.push(num);
+                local_nums.push(num);
+            }
+            nums.push(Arc::new(local_nums));
+        }
+        num_list.sort();
+
+        let mut threads = Vec::new();
+        for i in 0..THREAD_NUM {
+            let nums = nums[i].clone();
+            let list = list.clone();
+            threads.push(thread::spawn(move || {
+                for i in 0..NUMS_PER_THREAD {
+                    list.insert(nums[i]);
+                }
+            }));
+        }
+
+        for t in threads {
+            t.join().unwrap();
+        }
+
+        for (index, num) in list.iter().unwrap().enumerate() {
+            assert_eq!(num.read().unwrap().value, num_list[index]);
         }
     }
 }
