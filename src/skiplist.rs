@@ -5,7 +5,7 @@ const MAX_LEVEL: usize = 4;
 
 pub struct Node<T> {
     level: usize,
-    value: T,
+    pub value: T,
     nexts: Vec<Option<Arc<RwLock<Node<T>>>>>,
 }
 
@@ -84,7 +84,7 @@ impl<T: PartialOrd> SkipList<T> {
             }
         }
 
-        match &*self.head.write().unwrap() {
+        match &*self.head.read().unwrap() {
             None => {
                 self.head.write().unwrap().replace(new_node).unwrap();
             }
@@ -135,6 +135,22 @@ impl<T: PartialOrd> SkipList<T> {
                 }
             }
             None => (None, prev),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn insert_test() {
+        let list = SkipList::new();
+        for i in 0..100 {
+            list.insert(i);   
+        }
+        for (index, num) in list.iter().unwrap().enumerate() {
+            assert_eq!(num.read().unwrap().value, index);
         }
     }
 }
