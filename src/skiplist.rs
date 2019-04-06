@@ -126,6 +126,7 @@ impl<T: PartialOrd> SkipList<T> {
                             }
                         }
                         None => {
+                            prev[level] = Some(x.clone());
                             if level == 0 {
                                 return (None, prev);
                             } else {
