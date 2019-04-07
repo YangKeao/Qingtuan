@@ -77,7 +77,7 @@ impl<T: PartialOrd + Default> SkipList<T> {
         }
     }
 
-    pub fn insert(&self, val: T) {
+    pub fn insert(&mut self, val: T) {
         let (_now, prev) = self.find_greater_or_equal(&val);
 
         let height = random_height();
@@ -153,7 +153,7 @@ mod test {
 
     #[test]
     fn insert_test() {
-        let list = SkipList::new();
+        let mut list = SkipList::new();
         for i in 0..1000 {
             list.insert(i);
         }
@@ -164,7 +164,7 @@ mod test {
 
     #[test]
     fn random_insert() {
-        let list = SkipList::new();
+        let mut list = SkipList::new();
         let mut nums: Vec<u32> = Vec::new();
         for _ in 0..1000 {
             let num = rand::random();
@@ -179,7 +179,7 @@ mod test {
 
     #[test]
     fn seek_test() {
-        let list = SkipList::new();
+        let mut list = SkipList::new();
         for i in 0..1000 {
             list.insert(i);
         }
