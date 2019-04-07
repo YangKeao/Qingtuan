@@ -2,7 +2,7 @@ use super::extend_iter::ExtendIter;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-const MAX_LEVEL: usize = 128;
+const MAX_LEVEL: usize = 256;
 
 pub struct Node<T> {
     pub value: T,
