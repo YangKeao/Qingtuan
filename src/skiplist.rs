@@ -46,12 +46,7 @@ impl<T: PartialOrd + Default> ExtendIter<T> for SkipListIter<T> {
         let (now, _) = quasi_skiplist.find_greater_or_equal(val);
         match now {
             Some(now) => {
-                if &now.value == val {
-                    self.now = now.clone();
-                    Some(now.clone())
-                } else {
-                    None
-                }
+                Some(now.clone())
             }
             None => None,
         }
