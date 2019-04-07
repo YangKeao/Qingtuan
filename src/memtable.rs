@@ -205,8 +205,9 @@ mod test {
     #[bench]
     fn insert(b: &mut Bencher) {
         let mut table = MemTable::new();
+        let mut key: u32 = 0;
         b.iter(move || {
-            let key: u32 = rand::random();
+            key += 1;
             table.insert(slice_from_str(&format!("{}", key)), slice_from_str(&format!("{}", key+1)));
         });
     }
