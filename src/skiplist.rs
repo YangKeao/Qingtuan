@@ -6,11 +6,11 @@ const MAX_LEVEL: usize = 4;
 
 pub struct Node<T> {
     pub value: T,
-    nexts: Vec<Option<Arc<RwLock<Node<T>>>>>,
+    nexts: Vec<RwLock<Option<Arc<Node<T>>>>>,
 }
 
 pub struct SkipList<T: PartialOrd> {
-    head: Arc<RwLock<Node<T>>>,
+    head: Arc<Node<T>>,
 }
 
 fn random_height() -> usize {
@@ -18,16 +18,17 @@ fn random_height() -> usize {
 }
 
 pub struct SkipListIter<T: PartialOrd> {
-    now: Arc<RwLock<Node<T>>>,
+    now: Arc<Node<T>>,
 }
 
 impl<T: PartialOrd> Iterator for SkipListIter<T> {
-    type Item = Arc<RwLock<Node<T>>>;
+    type Item = Arc<Node<T>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let now = self.now.clone();
-        let now_guard = now.read().unwrap();
-        match &now_guard.nexts[0] {
+
+        let read_guard = now.nexts[0].read().unwrap();
+        match &*read_guard {
             Some(next) => {
                 self.now = next.clone();
                 return Some(self.now.clone());
@@ -45,7 +46,7 @@ impl<T: PartialOrd + Default> ExtendIter<T> for SkipListIter<T> {
         let (now, _) = quasi_skiplist.find_greater_or_equal(val);
         match now {
             Some(now) => {
-                if &now.read().unwrap().value == val {
+                if &now.value == val {
                     self.now = now.clone();
                     Some(now.clone())
                 } else {
@@ -61,13 +62,13 @@ impl<T: PartialOrd + Default> SkipList<T> {
     pub fn new() -> Self {
         let mut nexts = Vec::new();
         for _ in 0..MAX_LEVEL {
-            nexts.push(None);
+            nexts.push(RwLock::new(None));
         }
         return Self {
-            head: Arc::new(RwLock::new(Node {
+            head: Arc::new(Node {
                 value: T::default(),
                 nexts,
-            })),
+            }),
         };
     }
 
@@ -83,20 +84,31 @@ impl<T: PartialOrd + Default> SkipList<T> {
         let height = random_height();
         let mut nexts = Vec::new();
         for _ in 0..MAX_LEVEL {
-            nexts.push(None);
+            nexts.push(RwLock::new(None));
         }
-        let new_node = Arc::new(RwLock::new(Node { value: val, nexts }));
+        let new_node =Node { value: val, nexts };
 
         for i in 0..height {
             match &prev[i] {
                 Some(prev) => {
-                    match &prev.read().unwrap().nexts[i] {
+                    match &*prev.nexts[i].read().unwrap() {
                         Some(next) => {
-                            new_node.write().unwrap().nexts[i] = Some(next.clone());
+                            new_node.nexts[i].write().unwrap().replace(next.clone());
                         }
                         None => {}
                     }
-                    prev.write().unwrap().nexts[i] = Some(new_node.clone());
+                }
+                None => {
+                    unreachable!();
+                }
+            }
+        }
+
+        let new_node_ptr = Arc::new(new_node);
+        for i in 0..height {
+            match &prev[i] {
+                Some(prev) => {
+                    prev.nexts[i].write().unwrap().replace(new_node_ptr.clone());
                 }
                 None => {
                     unreachable!();
@@ -109,20 +121,20 @@ impl<T: PartialOrd + Default> SkipList<T> {
         &self,
         val: &T,
     ) -> (
-        Option<Arc<RwLock<Node<T>>>>,
-        Vec<Option<Arc<RwLock<Node<T>>>>>,
+        Option<Arc<Node<T>>>,
+        Vec<Option<Arc<Node<T>>>>,
     ) {
-        let mut prev: Vec<Option<Arc<RwLock<Node<T>>>>> = vec![None; MAX_LEVEL];
+        let mut prev: Vec<Option<Arc<Node<T>>>> = vec![None; MAX_LEVEL];
         let mut x = self.head.clone();
 
         let mut level = MAX_LEVEL - 1;
         loop {
-            let x_guard = x.read().unwrap();
-            match &x_guard.nexts[level] {
+            let read_guard = x.nexts[level].read().unwrap();
+            match &*read_guard {
                 Some(next) => {
-                    if &next.read().unwrap().value < val {
+                    if &next.value < val {
                         let new_x = next.clone();
-                        drop(x_guard);
+                        drop(read_guard);
                         x = new_x;
                         continue;
                     } else {
@@ -158,7 +170,7 @@ mod test {
             list.insert(i);
         }
         for (index, num) in list.iter().enumerate() {
-            assert_eq!(num.read().unwrap().value, index);
+            assert_eq!(num.value, index);
         }
     }
 
@@ -173,7 +185,7 @@ mod test {
         }
         nums.sort();
         for (index, num) in list.iter().enumerate() {
-            assert_eq!(num.read().unwrap().value, nums[index]);
+            assert_eq!(num.value, nums[index]);
         }
     }
 
@@ -186,12 +198,12 @@ mod test {
 
         let mut iter = list.iter();
         let val = iter.seek(&500).unwrap();
-        assert_eq!(val.read().unwrap().value, 500);
+        assert_eq!(val.value, 500);
 
         let mut acc = 500;
         while let Some(val) = iter.next() {
             acc += 1;
-            assert_eq!(val.read().unwrap().value, acc);
+            assert_eq!(val.value, acc);
         }
     }
 }

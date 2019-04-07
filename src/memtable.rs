@@ -158,7 +158,7 @@ impl MemTable {
         });
         match res {
             Some(val) => {
-                Some(val.read().unwrap().value.value.clone())
+                Some(val.value.value.clone())
             }
             None => None
         }
@@ -167,12 +167,14 @@ impl MemTable {
 
 #[cfg(test)]
 mod test {
+    extern crate test;
+    use test::Bencher;
     use super::*;
     use std::ffi::CString;
 
     fn slice_from_str(str: &str) -> Slice {
         let len = str.len();
-        let mut str = CString::new(str).unwrap();
+        let str = CString::new(str).unwrap();
         return Slice {
             data: str.into_raw() as *mut u8,
             size: len,
@@ -198,5 +200,14 @@ mod test {
             let value = table.find(slice_from_str(&format!("{}", i))).unwrap();
             assert!(value == slice_from_str(&format!("{}", i+1)));
         }
+    }
+
+    #[bench]
+    fn insert(b: &mut Bencher) {
+        let mut table = MemTable::new();
+        b.iter(move || {
+            let key: u32 = rand::random();
+            table.insert(slice_from_str(&format!("{}", key)), slice_from_str(&format!("{}", key+1)));
+        });
     }
 }
