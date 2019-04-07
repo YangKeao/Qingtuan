@@ -1,3 +1,4 @@
+use super::extend_iter::ExtendIter;
 use std::sync::Arc;
 use std::sync::RwLock;
 
@@ -30,6 +31,26 @@ impl<T: PartialOrd> Iterator for SkipListIter<T> {
             Some(next) => {
                 self.now = next.clone();
                 return Some(self.now.clone());
+            }
+            None => None,
+        }
+    }
+}
+
+impl<T: PartialOrd + Default> ExtendIter<T> for SkipListIter<T> {
+    fn seek(&mut self, val: &T) -> Option<Self::Item> {
+        let quasi_skiplist = SkipList {
+            head: self.now.clone(),
+        };
+        let (now, _) = quasi_skiplist.find_greater_or_equal(val);
+        match now {
+            Some(now) => {
+                if &now.read().unwrap().value == val {
+                    self.now = now.clone();
+                    Some(now.clone())
+                } else {
+                    None
+                }
             }
             None => None,
         }
@@ -84,7 +105,7 @@ impl<T: PartialOrd + Default> SkipList<T> {
         }
     }
 
-    fn find_greater_or_equal(
+    pub fn find_greater_or_equal(
         &self,
         val: &T,
     ) -> (
@@ -153,6 +174,24 @@ mod test {
         nums.sort();
         for (index, num) in list.iter().enumerate() {
             assert_eq!(num.read().unwrap().value, nums[index]);
+        }
+    }
+
+    #[test]
+    fn seek_test() {
+        let list = SkipList::new();
+        for i in 0..1000 {
+            list.insert(i);
+        }
+
+        let mut iter = list.iter();
+        let val = iter.seek(&500).unwrap();
+        assert_eq!(val.read().unwrap().value, 500);
+
+        let mut acc = 500;
+        while let Some(val) = iter.next() {
+            acc += 1;
+            assert_eq!(val.read().unwrap().value, acc);
         }
     }
 }
