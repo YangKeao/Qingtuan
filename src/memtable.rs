@@ -82,7 +82,7 @@ impl PartialOrd for Key {
             Ordering::Equal => {
                 if self.version_number == other.version_number {
                     Some(Ordering::Equal)
-                } else if self.version_number < other.version_number {
+                } else if self.version_number > other.version_number { // Note: Order of Version Number is unusual because we want the Key with biggest version_number smaller than we provide.
                     Some(Ordering::Less)
                 } else {
                     Some(Ordering::Greater)
