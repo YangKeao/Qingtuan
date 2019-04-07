@@ -1,7 +1,6 @@
 use crate::skiplist::SkipList;
 use std::cmp::Ordering;
 use libc::memcmp;
-use std::sync::{RwLock, Arc};
 use crate::extend_iter::ExtendIter;
 use std::ptr::null_mut;
 
@@ -129,17 +128,17 @@ impl Default for Record {
 }
 
 pub struct MemTable {
-    data: Arc<RwLock<SkipList<Record>>>
+    data: SkipList<Record>
 }
 
 impl MemTable {
     pub fn new() -> MemTable {
         Self {
-            data: Arc::new(RwLock::new(SkipList::new()))
+            data: SkipList::new()
         }
     }
     pub fn insert(&mut self, key: Slice, val: Slice) {
-        self.data.write().unwrap().insert(Record {
+        self.data.insert(Record {
             key: Key {
                 version_number: 0, // TODO: version management
                 data: key
@@ -148,7 +147,7 @@ impl MemTable {
         });
     }
     pub fn find(&self, key: Slice) -> Option<Slice> {
-        let mut list_iter = self.data.read().unwrap().iter();
+        let mut list_iter = self.data.iter();
         let res = list_iter.seek(&Record {
             key: Key {
                 version_number: 0,
