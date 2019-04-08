@@ -82,18 +82,16 @@ impl<T: PartialOrd + Default> SkipList<T> {
         for _ in 0..MAX_LEVEL {
             nexts.push(RwLock::new(None));
         }
-        let new_node =Node { value: val, nexts };
+        let new_node = Node { value: val, nexts };
 
         for i in 0..height {
             match &prev[i] {
-                Some(prev) => {
-                    match &*prev.nexts[i].read().unwrap() {
-                        Some(next) => {
-                            new_node.nexts[i].write().unwrap().replace(next.clone());
-                        }
-                        None => {}
+                Some(prev) => match &*prev.nexts[i].read().unwrap() {
+                    Some(next) => {
+                        new_node.nexts[i].write().unwrap().replace(next.clone());
                     }
-                }
+                    None => {}
+                },
                 None => {
                     unreachable!();
                 }
@@ -116,10 +114,7 @@ impl<T: PartialOrd + Default> SkipList<T> {
     pub fn find_greater_or_equal(
         &self,
         val: &T,
-    ) -> (
-        Option<Arc<Node<T>>>,
-        Vec<Option<Arc<Node<T>>>>,
-    ) {
+    ) -> (Option<Arc<Node<T>>>, Vec<Option<Arc<Node<T>>>>) {
         let mut prev: Vec<Option<Arc<Node<T>>>> = vec![None; MAX_LEVEL];
         let mut x = self.head.clone();
 
