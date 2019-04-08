@@ -56,7 +56,7 @@ impl<T: PartialOrd + Default> ExtendIter<T> for SkipListIter<T> {
 
 impl<T: PartialOrd + Default> SkipList<T> {
     pub fn new() -> Self {
-        let mut nexts = Vec::new();
+        let mut nexts = Vec::with_capacity(MAX_LEVEL);
         for _ in 0..MAX_LEVEL {
             nexts.push(RwLock::new(None));
         }
@@ -78,7 +78,7 @@ impl<T: PartialOrd + Default> SkipList<T> {
         let (_now, prev) = self.find_greater_or_equal(&val);
 
         let height = random_height();
-        let mut nexts = Vec::new();
+        let mut nexts = Vec::with_capacity(MAX_LEVEL);
         for _ in 0..MAX_LEVEL {
             nexts.push(RwLock::new(None));
         }
