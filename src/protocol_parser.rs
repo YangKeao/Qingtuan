@@ -14,6 +14,7 @@ impl From<TcpStream> for ProtocolParser {
 
 impl Into<(TcpStream, Vec<Operation>)> for ProtocolParser {
     fn into(self) -> (TcpStream, Vec<Operation>) {
-        (self.stream, Vec::new()) // TODO: add parse function
+        let mut ops = Vec::new();
+        (self.stream, ops) // TODO: add parse function
     }
 }

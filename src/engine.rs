@@ -1,6 +1,6 @@
 use crate::database::{Database, Handle};
 use crate::protocol_parser::ProtocolParser;
-use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use std::net::{TcpListener, ToSocketAddrs};
 use std::sync::{Arc, RwLock};
 use std::thread;
 
