@@ -1,3 +1,4 @@
+use crate::protocol_parser::Protocol;
 use crate::slice::Slice;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use std::net::TcpStream;
@@ -12,12 +13,12 @@ pub enum Operation {
 
 pub struct Handle {
     op: Operation,
-    stream: Arc<RwLock<TcpStream>>,
+    reply_sender: Protocol, // TODO: Add Reply Type
 }
 
 impl Handle {
-    pub fn new(op: Operation, stream: Arc<RwLock<TcpStream>>) -> Handle {
-        Handle { op, stream }
+    pub fn new(op: Operation, reply_sender: Protocol) -> Handle {
+        Handle { op, reply_sender }
     }
 }
 

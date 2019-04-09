@@ -1,5 +1,5 @@
 use crate::database::{Database, Handle};
-use crate::protocol_parser::ProtocolParser;
+use crate::protocol_parser::Protocol;
 use std::net::{TcpListener, ToSocketAddrs};
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -23,13 +23,11 @@ impl Engine {
                 Ok(stream) => {
                     let operation_sender = self.database.get_sender();
                     thread::spawn(move || {
-                        let protocol_parser = ProtocolParser::from(stream);
-                        let (stream, ops) = protocol_parser.into();
-                        let stream = Arc::new(RwLock::new(stream));
+                        let protocol = Protocol::from(stream);
 
-                        for op in ops {
+                        for op in protocol.iter() {
                             operation_sender
-                                .send(Handle::new(op, stream.clone()))
+                                .send(Handle::new(op, protocol.get_sender()))
                                 .unwrap();
                         }
                     });

@@ -4,13 +4,13 @@ use byteorder::{BigEndian, ReadBytesExt};
 use std::io::Read;
 use std::net::TcpStream;
 
-pub struct ProtocolParser {
+pub struct Protocol {
     stream: TcpStream,
 }
 
-impl From<TcpStream> for ProtocolParser {
+impl From<TcpStream> for Protocol {
     fn from(stream: TcpStream) -> Self {
-        return ProtocolParser { stream };
+        return Protocol { stream };
     }
 }
 
@@ -99,11 +99,29 @@ pub trait ProtocolReader: Read {
 
 impl<T: Read> ProtocolReader for T {}
 
-impl Into<(TcpStream, Vec<Operation>)> for ProtocolParser {
-    fn into(self) -> (TcpStream, Vec<Operation>) {
-        let mut ops = Vec::new();
+impl Iterator for Protocol {
+    type Item = Operation;
 
-        (self.stream, ops) // TODO: add parse function
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.stream.read_op())
+    }
+}
+
+impl Clone for Protocol {
+    fn clone(&self) -> Protocol {
+        Protocol {
+            stream: self.stream.try_clone().unwrap(),
+        }
+    }
+}
+
+impl Protocol {
+    pub fn iter(&self) -> Protocol {
+        self.clone()
+    }
+
+    pub fn get_sender(&self) -> Protocol {
+        self.clone()
     }
 }
 
