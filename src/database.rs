@@ -1,7 +1,8 @@
 use crate::protocol_parser::Protocol;
+use crate::internal_database::InternalDatabase;
+use std::thread;
 use crate::slice::Slice;
-use crossbeam::channel::{unbounded, Receiver, Sender};
-use std::net::TcpStream;
+use crossbeam::channel::{unbounded, Sender};
 use std::sync::{Arc, RwLock};
 
 pub struct PutOp(pub Slice, pub Slice);
@@ -12,8 +13,8 @@ pub enum Operation {
 }
 
 pub struct Handle {
-    op: Operation,
-    reply_sender: Protocol, // TODO: Add Reply Type
+    pub op: Operation,
+    pub reply_sender: Protocol, // TODO: Add Reply Type
 }
 
 impl Handle {
@@ -23,14 +24,29 @@ impl Handle {
 }
 
 pub struct Database {
-    r: Receiver<Handle>,
     s: Sender<Handle>,
+    internal_database: Arc<RwLock<InternalDatabase>>
 }
 
 impl Database {
     pub fn new() -> Database {
-        let (s, r) = unbounded();
-        Database { r, s }
+        let (s, r) = unbounded::<Handle>();
+        let internal_database = Arc::new(RwLock::new(InternalDatabase::new()));
+
+        let db = internal_database.clone();
+        thread::spawn(move || {
+            while let Ok(handle) = r.recv() {
+                match handle.op {
+                    Operation::Get(op) => {
+                        db.read().unwrap().get(op.0);
+                    }
+                    Operation::Put(op) => {
+                        db.write().unwrap().put(op.0, op.1);
+                    }
+                }           
+            }
+        });
+        Database { s, internal_database }
     }
 
     pub fn get_sender(&self) -> Sender<Handle> {

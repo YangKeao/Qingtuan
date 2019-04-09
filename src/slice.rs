@@ -8,6 +8,7 @@ pub struct Slice {
 }
 
 unsafe impl Send for Slice {}
+unsafe impl Sync for Slice {}
 
 impl Drop for Slice {
     fn drop(&mut self) {
