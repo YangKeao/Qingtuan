@@ -43,7 +43,7 @@ pub trait ProtocolReader: Read {
     }
 
     fn read_vec(&mut self) -> Vec<u8> {
-         let prefix = self.read_prefix();
+        let prefix = self.read_prefix();
         match prefix {
             Prefix::String => {
                 let length = self.read_num();
@@ -67,7 +67,7 @@ pub trait ProtocolReader: Read {
         let mut buffer = vec![0; 2];
         self.read_exact(buffer.as_mut_slice()).unwrap();
 
-        if buffer[0] == '\r'  as u8 && buffer[1] == '\n' as u8 {
+        if buffer[0] == '\r' as u8 && buffer[1] == '\n' as u8 {
             return;
         } else {
             panic!("Expect a break line here");
@@ -76,7 +76,7 @@ pub trait ProtocolReader: Read {
 
     fn read_slice(&mut self) -> Slice {
         Slice::from(self.read_vec())
-   }
+    }
 
     fn read_op(&mut self) -> Operation {
         let prefix = self.read_prefix();
@@ -109,29 +109,22 @@ impl Into<(TcpStream, Vec<Operation>)> for ProtocolParser {
 
 #[cfg(test)]
 mod test {
-    use std::io::Read;
     use super::*;
-    use crate::database::*;
     use crate::slice::Slice;
 
     #[test]
     fn parse_operation() {
         {
-            let buffer = vec!['*' as u8, '\r' as u8, '\n' as u8,
-                              '$' as u8, 0, 0, 0, 3, '\r' as u8, '\n' as u8,
-                              'G' as u8, 'E' as u8, 'T' as u8 ,'\r' as u8, '\n' as u8,
-                              '$' as u8, 0, 0, 0, 1, '\r' as u8, '\n' as u8,
-                              'Y' as u8,  '\r' as u8, '\n' as u8,
-];
+            let buffer = vec![
+                '*' as u8, '\r' as u8, '\n' as u8, '$' as u8, 0, 0, 0, 3, '\r' as u8, '\n' as u8,
+                'G' as u8, 'E' as u8, 'T' as u8, '\r' as u8, '\n' as u8, '$' as u8, 0, 0, 0, 1,
+                '\r' as u8, '\n' as u8, 'Y' as u8, '\r' as u8, '\n' as u8,
+            ];
             let mut buffer = &buffer[..];
             let op = buffer.read_op();
             match op {
-                Operation::Get(op) => {
-                    assert!(op.0 == Slice::from(vec!['Y' as u8]))
-                }
-                _ => {
-                    panic!("Parse Operation Error")
-                }
+                Operation::Get(op) => assert!(op.0 == Slice::from(vec!['Y' as u8])),
+                _ => panic!("Parse Operation Error"),
             }
         }
     }
