@@ -68,6 +68,16 @@ impl Clone for Slice {
     }
 }
 
+impl From<Vec<u8>> for Slice {
+    fn from(vec: Vec<u8>) -> Slice {
+        let len = vec.len();
+        Slice {
+            data: (*Box::leak(vec.into_boxed_slice())).as_mut_ptr(),
+            size: len,
+        }
+    }
+}
+
 impl Slice {
     fn empty() -> Slice {
         return Slice {

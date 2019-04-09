@@ -3,9 +3,11 @@ use crossbeam::channel::{unbounded, Receiver, Sender};
 use std::net::TcpStream;
 use std::sync::{Arc, RwLock};
 
-pub struct PutOp(Slice, Slice);
+pub struct PutOp(pub Slice, pub Slice);
+pub struct GetOp(pub Slice);
 pub enum Operation {
     Put(PutOp),
+    Get(GetOp),
 }
 
 pub struct Handle {
