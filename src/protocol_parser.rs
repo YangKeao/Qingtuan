@@ -1,5 +1,5 @@
 use crate::database::*;
-use crate::memtable::Slice;
+use crate::slice::Slice;
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::Read;
 use std::net::TcpStream;
@@ -14,20 +14,20 @@ impl From<TcpStream> for ProtocolParser {
     }
 }
 
-enum Prefix {
+pub enum Prefix {
     Count,
     String,
 }
 
-trait ProtocolReader {
-    fn read_prefix(&mut self) -> Prefix;
-    fn read_num(&mut self) -> i32;
-    fn read_str(&mut self) -> String;
-    fn read_op(&mut self) -> Operation;
-    fn read_slice(&mut self) -> Slice;
-}
+// trait ProtocolReader {
+//     fn read_prefix(&mut self) -> Prefix;
+//     fn read_num(&mut self) -> i32;
+//     fn read_str(&mut self) -> String;
+//     fn read_op(&mut self) -> Operation;
+//     fn read_slice(&mut self) -> Slice;
+// }
 
-impl ProtocolReader for TcpStream {
+pub trait ProtocolReader: Read {
     fn read_prefix(&mut self) -> Prefix {
         match self.read_u8().unwrap().into() {
             '*' => Prefix::Count,
@@ -98,4 +98,12 @@ impl Into<(TcpStream, Vec<Operation>)> for ProtocolParser {
 
         (self.stream, ops) // TODO: add parse function
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn parse_
 }

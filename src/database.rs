@@ -1,4 +1,4 @@
-use crate::memtable::Slice;
+use crate::slice::Slice;
 use crossbeam::channel::{unbounded, Receiver, Sender};
 use std::net::TcpStream;
 use std::sync::{Arc, RwLock};
