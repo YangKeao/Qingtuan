@@ -1,7 +1,7 @@
 use crate::database::*;
 use crate::slice::Slice;
-use byteorder::{BigEndian, ReadBytesExt};
-use std::io::Read;
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use std::io::{Read, Write};
 use std::net::TcpStream;
 
 pub struct Protocol {
@@ -18,14 +18,6 @@ pub enum Prefix {
     Count,
     String,
 }
-
-// trait ProtocolReader {
-//     fn read_prefix(&mut self) -> Prefix;
-//     fn read_num(&mut self) -> i32;
-//     fn read_str(&mut self) -> String;
-//     fn read_op(&mut self) -> Operation;
-//     fn read_slice(&mut self) -> Slice;
-// }
 
 pub trait ProtocolReader: Read {
     fn read_prefix(&mut self) -> Prefix {
@@ -99,6 +91,41 @@ pub trait ProtocolReader: Read {
 
 impl<T: Read> ProtocolReader for T {}
 
+pub trait ProtocolWriter: Write {
+    fn write_prefix(&mut self, prefix: Prefix) {
+        match prefix {
+            Prefix::Count => self.write_u8('*' as u8).unwrap(),
+            Prefix::String => self.write_u8('$' as u8).unwrap(),
+        };
+    }
+    fn write_num(&mut self, num: i32) {
+        self.write_i32::<BigEndian>(num).unwrap();
+    }
+    fn write_break_line(&mut self) {
+        self.write(b"\r\n").unwrap();
+    }
+    fn write_vec(&mut self, vec: Vec<u8>) {
+        self.write_prefix(Prefix::String);
+        self.write_num(vec.len() as i32);
+        self.write_break_line();
+        self.write(vec.as_slice()).unwrap();
+        self.write_break_line();
+    }
+    fn write_str(&mut self, str: String) {
+        self.write_vec(str.into_bytes());
+    }
+    fn write_slice(&mut self, slice: Slice) {
+        self.write_vec(slice.into());
+    }
+    fn write_return(&mut self, ret: Return) {
+        match ret {
+            Return::Get(get_return) => self.write_slice(get_return.0),
+        }
+    }
+}
+
+impl<T: Write> ProtocolWriter for T {}
+
 impl Iterator for Protocol {
     type Item = Operation;
 
@@ -132,18 +159,31 @@ mod test {
 
     #[test]
     fn parse_operation() {
-        {
-            let buffer = vec![
-                '*' as u8, '\r' as u8, '\n' as u8, '$' as u8, 0, 0, 0, 3, '\r' as u8, '\n' as u8,
-                'G' as u8, 'E' as u8, 'T' as u8, '\r' as u8, '\n' as u8, '$' as u8, 0, 0, 0, 1,
-                '\r' as u8, '\n' as u8, 'Y' as u8, '\r' as u8, '\n' as u8,
-            ];
-            let mut buffer = &buffer[..];
-            let op = buffer.read_op();
-            match op {
-                Operation::Get(op) => assert!(op.0 == Slice::from(vec!['Y' as u8])),
-                _ => panic!("Parse Operation Error"),
-            }
-        }
+        let buffer = vec![
+            '*' as u8, '\r' as u8, '\n' as u8, '$' as u8, 0, 0, 0, 3, '\r' as u8, '\n' as u8,
+            'G' as u8, 'E' as u8, 'T' as u8, '\r' as u8, '\n' as u8, '$' as u8, 0, 0, 0, 1,
+            '\r' as u8, '\n' as u8, 'Y' as u8, '\r' as u8, '\n' as u8,
+        ];
+        let mut buffer = &buffer[..];
+        let op = buffer.read_op();
+        match op {
+            Operation::Get(op) => assert!(op.0 == Slice::from(vec!['Y' as u8])),
+            _ => panic!("Parse Operation Error"),
+        };
+    }
+
+    #[test]
+    fn parse_return() {
+        let mut buffer = Vec::new();
+
+        buffer.write_return(Return::Get(GetReturn(Slice::from(String::from("GET")))));
+
+        assert_eq!(
+            buffer,
+            vec![
+                '$' as u8, 0, 0, 0, 3, '\r' as u8, '\n' as u8, 'G' as u8, 'E' as u8, 'T' as u8,
+                '\r' as u8, '\n' as u8
+            ]
+        )
     }
 }

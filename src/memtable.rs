@@ -103,39 +103,21 @@ impl MemTable {
 mod test {
     extern crate test;
     use super::*;
-    use std::ffi::CString;
     use test::Bencher;
-
-    fn slice_from_str(str: &str) -> Slice {
-        let len = str.len();
-        let str = CString::new(str).unwrap();
-        return Slice {
-            data: str.into_raw() as *mut u8,
-            size: len,
-        };
-    }
-
-    #[test]
-    fn slice_partial_ord() {
-        let slice1 = slice_from_str("aaaaaaa");
-        let slice2 = slice_from_str("aaaaaab");
-
-        assert!(slice1 < slice2);
-    }
 
     #[test]
     fn table_insert_test() {
         let mut table = MemTable::new();
         for i in 0..1000 {
             table.insert(
-                slice_from_str(&format!("{}", i)),
-                slice_from_str(&format!("{}", i + 1)),
+                Slice::from(format!("{}", i)),
+                Slice::from(format!("{}", i + 1)),
             );
         }
 
         for i in 0..1000 {
-            let value = table.find(slice_from_str(&format!("{}", i))).unwrap();
-            assert!(value == slice_from_str(&format!("{}", i + 1)));
+            let value = table.find(Slice::from(format!("{}", i))).unwrap();
+            assert!(value == Slice::from(format!("{}", i + 1)));
         }
     }
 
@@ -146,8 +128,8 @@ mod test {
         b.iter(move || {
             key += 1;
             table.insert(
-                slice_from_str(&format!("{}", key)),
-                slice_from_str(&format!("{}", key + 1)),
+                Slice::from(format!("{}", key)),
+                Slice::from(format!("{}", key + 1)),
             );
         });
     }

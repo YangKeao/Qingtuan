@@ -1,15 +1,20 @@
-use crate::protocol_parser::Protocol;
 use crate::internal_database::InternalDatabase;
-use std::thread;
+use crate::protocol_parser::Protocol;
 use crate::slice::Slice;
 use crossbeam::channel::{unbounded, Sender};
 use std::sync::{Arc, RwLock};
+use std::thread;
 
 pub struct PutOp(pub Slice, pub Slice);
 pub struct GetOp(pub Slice);
 pub enum Operation {
     Put(PutOp),
     Get(GetOp),
+}
+
+pub struct GetReturn(pub Slice);
+pub enum Return {
+    Get(GetReturn),
 }
 
 pub struct Handle {
@@ -25,7 +30,7 @@ impl Handle {
 
 pub struct Database {
     s: Sender<Handle>,
-    internal_database: Arc<RwLock<InternalDatabase>>
+    internal_database: Arc<RwLock<InternalDatabase>>,
 }
 
 impl Database {
@@ -43,10 +48,13 @@ impl Database {
                     Operation::Put(op) => {
                         db.write().unwrap().put(op.0, op.1);
                     }
-                }           
+                }
             }
         });
-        Database { s, internal_database }
+        Database {
+            s,
+            internal_database,
+        }
     }
 
     pub fn get_sender(&self) -> Sender<Handle> {

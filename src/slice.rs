@@ -67,6 +67,12 @@ impl Clone for Slice {
     }
 }
 
+impl From<String> for Slice {
+    fn from(str: String) -> Slice {
+        Slice::from(str.into_bytes())
+    }
+}
+
 impl From<Vec<u8>> for Slice {
     fn from(vec: Vec<u8>) -> Slice {
         let len = vec.len();
@@ -74,6 +80,12 @@ impl From<Vec<u8>> for Slice {
             data: (*Box::leak(vec.into_boxed_slice())).as_mut_ptr(),
             size: len,
         }
+    }
+}
+
+impl Into<Vec<u8>> for Slice {
+    fn into(self) -> Vec<u8> {
+        unsafe { (*std::slice::from_raw_parts(self.data, self.size)).to_vec() }
     }
 }
 
@@ -89,6 +101,14 @@ impl Slice {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn slice_partial_ord() {
+        let slice1 = Slice::from(String::from("aaaaaaa"));
+        let slice2 = Slice::from(String::from("aaaaaab"));
+
+        assert!(slice1 < slice2);
+    }
 
     #[test]
     fn slice_from_vec() {

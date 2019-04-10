@@ -2,13 +2,13 @@ use crate::memtable::*;
 use crate::slice::Slice;
 
 pub struct InternalDatabase {
-    memtable: MemTable 
+    memtable: MemTable,
 }
 
 impl InternalDatabase {
     pub fn new() -> InternalDatabase {
         InternalDatabase {
-            memtable: MemTable::new()
+            memtable: MemTable::new(),
         }
     }
 
